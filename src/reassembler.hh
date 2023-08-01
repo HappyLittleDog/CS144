@@ -2,10 +2,35 @@
 
 #include "byte_stream.hh"
 
+#include <cassert>
+#include <memory>
+#include <set>
 #include <string>
 
 class Reassembler
 {
+private:
+  class Buf_Record
+  {
+  public:
+    int index_;
+    int len_;
+    std::string bytes_;
+
+    Buf_Record( int index, const std::string& bytes ) : index_( index ), len_( bytes.length() ), bytes_( bytes ) {};
+
+    bool operator<( const Buf_Record& tp ) const { return index_ < tp.index_; }
+  };
+
+  /**
+   * REQUIRED r1 <= r2 for simplicity!
+   */
+  Buf_Record merge_record( const Buf_Record& r1, const Buf_Record& r2 );
+
+  int buf_beginning_ = 0;
+  bool ended_ = false;
+  std::set<Buf_Record> buf_ = std::set<Buf_Record>();
+
 public:
   /*
    * Insert a new substring to be reassembled into a ByteStream.
