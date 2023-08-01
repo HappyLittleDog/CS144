@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -106,6 +107,31 @@ void FileDescriptor::read( string& buffer )
   buffer.resize( bytes_read );
 }
 
+void FileDescriptor::rio_read( string& buffer )
+{
+  buffer.clear();
+  int bytes_read = 0;
+
+  while ( true ) {
+    string tpbuf;
+    try {
+      read( tpbuf );
+      if ( internal_fd_->eof_ == true ) {
+        break;
+      }
+      bytes_read += tpbuf.size();
+      buffer = buffer + tpbuf;
+    } catch ( const unix_error& err ) {
+      throw err;
+    } catch ( const runtime_error& err ) {
+      buffer = buffer + tpbuf;
+      throw runtime_error( "rio_read() read more than requested" );
+    }
+  } // end of while loop
+
+  buffer.resize( bytes_read );
+}
+
 void FileDescriptor::read( vector<unique_ptr<string>>& buffers )
 {
   if ( buffers.empty() ) {
@@ -155,6 +181,25 @@ size_t FileDescriptor::write( string_view buffer )
   return write( vector<string_view> { buffer } );
 }
 
+size_t FileDescriptor::rio_write( string_view buffer )
+{
+  int len = buffer.size();
+  int written_bytes = 0;
+  string cur_buf( buffer );
+
+  while ( written_bytes < len ) {
+    int cur_write = write( cur_buf );
+    written_bytes += cur_write;
+    if ( written_bytes == len )
+      break;
+    cur_buf = cur_buf.substr( cur_write );
+  }
+
+  if ( written_bytes > len )
+    throw runtime_error( "rio_write::write wrote more than length of input buffer" );
+  return len;
+}
+
 size_t FileDescriptor::write( const vector<string_view>& buffers )
 {
   vector<iovec> iovecs;
@@ -178,6 +223,15 @@ size_t FileDescriptor::write( const vector<string_view>& buffers )
   }
 
   return bytes_written;
+}
+
+size_t FileDescriptor::rio_write( const vector<string_view>& buffers )
+{
+  string cur_buf;
+  for ( const auto x : buffers ) {
+    cur_buf = cur_buf + string( x );
+  }
+  return rio_write( cur_buf );
 }
 
 void FileDescriptor::set_blocking( bool blocking )

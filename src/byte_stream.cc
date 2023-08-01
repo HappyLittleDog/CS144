@@ -8,70 +8,72 @@ ByteStream::ByteStream( uint64_t capacity ) : capacity_( capacity ) {}
 
 void Writer::push( string data )
 {
-  // Your code here.
-  (void)data;
+  if ( buf.length() + data.length() <= capacity_ ) {
+    pushed_len += data.length();
+    buf = buf + data;
+  } else {
+    pushed_len += ( capacity_ - buf.length() );
+    buf = buf + data.substr( 0, capacity_ - buf.length() );
+  }
 }
 
 void Writer::close()
 {
-  // Your code here.
+  ended_ = true;
 }
 
 void Writer::set_error()
 {
-  // Your code here.
+  err_ = true;
 }
 
 bool Writer::is_closed() const
 {
-  // Your code here.
-  return {};
+  return ended_;
 }
 
 uint64_t Writer::available_capacity() const
 {
-  // Your code here.
-  return {};
+  return capacity_ - buf.length();
 }
 
 uint64_t Writer::bytes_pushed() const
 {
-  // Your code here.
-  return {};
+  return pushed_len;
 }
 
 string_view Reader::peek() const
 {
-  // Your code here.
-  return {};
+  return buf;
 }
 
 bool Reader::is_finished() const
 {
-  // Your code here.
-  return {};
+  return ended_ && buf.empty();
 }
 
 bool Reader::has_error() const
 {
-  // Your code here.
-  return {};
+  return err_;
 }
 
 void Reader::pop( uint64_t len )
 {
-  // Your code here.
-  (void)len;
+  if ( len < buf.length() ) {
+    buf = buf.substr( len );
+    poped_len += len;
+  } else {
+    poped_len += buf.length();
+    buf.clear();
+  }
 }
 
 uint64_t Reader::bytes_buffered() const
 {
-  // Your code here.
-  return {};
+  return buf.length();
 }
 
 uint64_t Reader::bytes_popped() const
 {
-  // Your code here.
-  return {};
+  return poped_len;
 }

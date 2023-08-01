@@ -64,11 +64,14 @@ public:
   // Read into `buffer`
   void read( std::string& buffer );
   void read( std::vector<std::unique_ptr<std::string>>& buffers );
+  void rio_read( std::string& buffer );
 
   // Attempt to write a buffer
   // returns number of bytes written
   size_t write( std::string_view buffer );
   size_t write( const std::vector<std::string_view>& buffers );
+  size_t rio_write( std::string_view buffer );
+  size_t rio_write( const std::vector<std::string_view>& buffers );
 
   // Close the underlying file descriptor
   void close() { internal_fd_->close(); }
